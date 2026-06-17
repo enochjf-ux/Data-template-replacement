@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NDI Project Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif; background: #f8fafb; color: #2c3e50; }
+        
+        .header { background: linear-gradient(135deg, #1a237e 0%, #283593 100%); padding: 28px 32px; border-bottom: 1px solid rgba(0,0,0,0.1); position: relative; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 28px; font-weight: 700; color: white; letter-spacing: -0.5px; cursor: pointer; }
+        .header-meta { font-size: 13px; color: rgba(255,255,255,0.8); }
+        .nav-tabs { display: flex; gap: 8px; position: absolute; right: 32px; top: 28px; }
+        .nav-tabs button { padding: 8px 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; color: white; cursor: pointer; font-size: 12px; font-weight: 500; }
+        .nav-tabs button.active { background: white; color: #1a237e; }
+        
+        .search-section { display: flex; gap: 12px; align-items: center; }
+        .search-box { flex: 1; max-width: 450px; }
+        .search-box input { width: 100%; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; font-size: 13px; background: rgba(255,255,255,0.1); color: white; }
+        .search-box input::placeholder { color: rgba(255,255,255,0.6); }
+        .search-box input:focus { outline: none; border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.15); }
+        
+        .lock-toggle { padding: 10px 14px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; color: white; cursor: pointer; font-size: 12px; font-weight: 500; }
+        .lock-toggle:hover { background: rgba(255,255,255,0.3); }
+        .lock-toggle.locked { background: #d32f2f; border-color: #b71c1c; }
+        
+        .container { padding: 28px 32px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #1a237e; }
+        .card h3 { font-size: 14px; font-weight: 700; color: #1a237e; margin-bottom: 8px; }
+        .card p { font-size: 12px; color: #78909c; margin-bottom: 4px; }
+        .card .id-link { font-size: 12px; font-weight: 600; color: #1976d2; cursor: pointer; }
+        .card .id-link:hover { text-decoration: underline; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        th { background: #eceff1; padding: 16px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #546e7a; border-bottom: 1px solid #cfd8dc; }
+        td { padding: 16px 14px; font-size: 13px; border-bottom: 1px solid #eceff1; }
+        tr:hover { background: #f5f5f5; }
+        
+        .col-id { font-weight: 700; color: #1a237e; font-size: 12px; cursor: pointer; }
+        .col-id:hover { text-decoration: underline; }
+        .col-action { width: 100px; text-align: center; }
+        .col-rag { text-align: center; font-size: 11px; font-weight: 600; }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .status-active { background: #e8f5e9; color: #1b5e20; }
+        .rag-green { background: #a5d6a7; color: #1b5e20; }
+        .rag-amber { background: #ffb74d; color: #e65100; }
+        .rag-red { background: #ef5350; color: white; }
+        
+        .btn-edit { padding: 7px 14px; background: #1a237e; color: white; border: none; border-radius: 5px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .btn-edit:hover { background: #0d47a1; }
+        
+        .pagination { display: flex; gap: 8px; justify-content: center; padding: 28px; }
+        .pagination button { padding: 8px 14px; border: 1px solid #cfd8dc; background: white; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500; }
+        .pagination button.active { background: #1a237e; color: white; border-color: #1a237e; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        
+        .modal-full { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; display: flex; flex-direction: column; z-index: 1000; }
+        .modal-header { padding: 24px 32px; border-bottom: 1px solid #eceff1; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
+        .modal-title { display: flex; gap: 16px; flex: 1; }
+        .modal-title h2 { font-size: 20px; font-weight: 700; color: #1a237e; }
+        .project-id { font-size: 13px; color: #90a4ae; font-weight: 500; margin-top: 4px; }
+        .modal-status { font-size: 12px; padding: 6px 12px; border-radius: 20px; background: #c8e6c9; color: #1b5e20; font-weight: 600; }
+        .modal-status.locked { background: #ffcdd2; color: #b71c1c; }
+        .btn-close { background: none; border: none; font-size: 26px; cursor: pointer; color: #90a4ae; padding: 0; width: 32px; height: 32px; }
+        .btn-close:hover { color: #2c3e50; }
+        
+        .modal-tabs { display: flex; border-bottom: 1px solid #eceff1; padding: 0 32px; background: #fafbfc; gap: 0; }
+        .modal-tab-btn { padding: 14px 16px; border: none; background: none; cursor: pointer; font-size: 13px; color: #78909c; border-bottom: 3px solid transparent; font-weight: 500; }
+        .modal-tab-btn.active { color: #1a237e; border-bottom-color: #1a237e; }
+        
+        .modal-body { flex: 1; overflow-y: auto; padding: 32px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .field-section { margin-bottom: 32px; }
+        .field-section h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #546e7a; letter-spacing: 0.6px; margin-bottom: 16px; }
+        
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .field-item { display: flex; flex-direction: column; }
+        .field-label { font-size: 11px; font-weight: 700; color: #90a4ae; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+        .field-value { font-size: 13px; color: #2c3e50; font-weight: 500; }
+        .field-input { padding: 10px 12px; border: 1px solid #cfd8dc; border-radius: 5px; font-size: 13px; color: #2c3e50; background: white; font-family: inherit; }
+        .field-input:focus { outline: none; border-color: #1a237e; box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.08); background: #f8fafb; }
+        .field-input:disabled { background: #eceff1; color: #90a4ae; cursor: not-allowed; }
+        
+        .modal-footer { padding: 20px 32px; border-top: 1px solid #eceff1; display: flex; justify-content: space-between; gap: 10px; background: #fafbfc; }
+        .footer-left { display: flex; gap: 10px; }
+        .footer-right { display: flex; gap: 10px; }
+        
+        .btn { padding: 10px 16px; border: 1px solid #cfd8dc; background: white; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; color: #2c3e50; }
+        .btn:hover { border-color: #90a4ae; background: #f5f5f5; }
+        .btn-primary { background: #1a237e; color: white; border-color: #1a237e; }
+        .btn-primary:hover { background: #0d47a1; }
+        .btn-submit { background: #2e7d32; color: white; border-color: #2e7d32; }
+        .btn-submit:hover { background: #1b5e20; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <h1 onclick="goHome()">📊 NDI Project Portal</h1>
+            <div class="nav-tabs">
+                <button class="active" onclick="showPage('list')">Projects List</button>
+                <button onclick="showPage('home')">Dashboard</button>
+            </div>
+        </div>
+        <div class="search-section" id="searchSection" style="display:none;">
+            <div class="search-box">
+                <input type="text" id="globalSearch" placeholder="Search by Project ID, Name, or Manager...">
+            </div>
+            <button class="lock-toggle" id="globalLock" onclick="toggleGlobalLock()">🔓 Unlock Data Entry</button>
+        </div>
+    </div>
+    
+    <!-- HOME PAGE -->
+    <div id="homePage" style="display:none;">
+        <div class="container">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 22px; font-weight: 700; color: #1a237e; margin-bottom: 8px;">Project Dashboard</h2>
+                <p style="color: #78909c; font-size: 13px;">Click Project ID for quick view • Lock/Unlock in list for editing</p>
+            </div>
+            <div class="dashboard-grid" id="dashboardCards"></div>
+        </div>
+    </div>
+    
+    <!-- LIST PAGE -->
+    <div id="listPage">
+        <div class="container">
+            <table id="projectTable">
+                <thead>
+                    <tr>
+                        <th>Project ID</th>
+                        <th>Project Name</th>
+                        <th>Department</th>
+                        <th>Region</th>
+                        <th>Lead Company</th>
+                        <th>Status</th>
+                        <th>Phase</th>
+                        <th class="col-rag">O</th>
+                        <th class="col-rag">Q</th>
+                        <th class="col-rag">C</th>
+                        <th class="col-rag">T</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+    
+    <!-- VIEW MODAL -->
+    <div class="modal" id="viewModal">
+        <div class="modal-full" id="viewModalFull">
+            <div class="modal-header">
+                <h2 id="viewModalTitle"></h2>
+                <button class="btn-close" onclick="closeViewModal()">×</button>
+            </div>
+            <div class="modal-body" id="viewModalContent" style="max-width: 100%; padding: 32px 64px;">
+            </div>
+        </div>
+    </div>
+    
+    <!-- EDIT MODAL -->
+    <div class="modal" id="editModal">
+        <div class="modal-full" id="editModalFull">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <div>
+                        <h2 id="modalTitle"></h2>
+                        <div class="project-id">ID: <span id="modal-id"></span></div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span class="modal-status" id="modalLockStatus">🔓 Unlocked</span>
+                    <button class="btn-close" onclick="closeModal()">×</button>
+                </div>
+            </div>
+            
+            <div class="modal-tabs">
+                <button class="modal-tab-btn active" data-tab="header">📋 Header</button>
+                <button class="modal-tab-btn" data-tab="classification">🏷️ Classification</button>
+                <button class="modal-tab-btn" data-tab="delivery">🚀 Delivery</button>
+                <button class="modal-tab-btn" data-tab="risk">⚠️ Risk</button>
+                <button class="modal-tab-btn" data-tab="financials">💰 Financials</button>
+            </div>
+            
+            <div class="modal-body" style="max-width: 100%; padding: 32px 64px;">
+                <div class="tab-content active" id="tab-header">
+                    <div class="field-section">
+                        <h3>Project Identity</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">Project ID</span><span class="field-value" id="edit-id"></span></div>
+                            <div class="field-item"><span class="field-label">Project Name</span><input type="text" class="field-input" id="edit-name"></div>
+                            <div class="field-item"><span class="field-label">Department</span><input type="text" class="field-input" id="edit-dept"></div>
+                            <div class="field-item"><span class="field-label">Lead Company</span><input type="text" class="field-input" id="edit-company"></div>
+                            <div class="field-item"><span class="field-label">Region</span><input type="text" class="field-input" id="edit-region"></div>
+                            <div class="field-item"><span class="field-label">Phase</span><input type="text" class="field-input" id="edit-phase"></div>
+                            <div class="field-item"><span class="field-label">Plan : EOC</span><input type="text" class="field-input" id="edit-eoc"></div>
+                            <div class="field-item"><span class="field-label">Status</span><input type="text" class="field-input" id="edit-status"></div>
+                        </div>
+                    </div>
+                    <div class="field-section">
+                        <h3>KPIs</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">Overall</span><input type="text" class="field-input" id="edit-overall"></div>
+                            <div class="field-item"><span class="field-label">Quality</span><input type="text" class="field-input" id="edit-quality"></div>
+                            <div class="field-item"><span class="field-label">Cost</span><input type="text" class="field-input" id="edit-cost"></div>
+                            <div class="field-item"><span class="field-label">Time</span><input type="text" class="field-input" id="edit-time"></div>
+                        </div>
+                    </div>
+                    <div class="field-section">
+                        <h3>Governance</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">Project Type</span><input type="text" class="field-input" id="edit-type"></div>
+                            <div class="field-item"><span class="field-label">Ownership</span><input type="text" class="field-input" id="edit-ownership"></div>
+                            <div class="field-item"><span class="field-label">Delivery Status</span><input type="text" class="field-input" id="edit-delivery"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-classification">
+                    <div class="field-section">
+                        <h3>Classification</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">Methodology</span><input type="text" class="field-input" id="edit-methodology"></div>
+                            <div class="field-item"><span class="field-label">Priority</span><input type="text" class="field-input" id="edit-priority"></div>
+                            <div class="field-item"><span class="field-label">New Product</span><input type="text" class="field-input" id="edit-newproduct"></div>
+                            <div class="field-item"><span class="field-label">APA Category</span><input type="text" class="field-input" id="edit-apa"></div>
+                            <div class="field-item"><span class="field-label">High Impact</span><input type="text" class="field-input" id="edit-impact"></div>
+                            <div class="field-item"><span class="field-label">Initiative</span><input type="text" class="field-input" id="edit-initiative"></div>
+                            <div class="field-item"><span class="field-label">Focus Area</span><input type="text" class="field-input" id="edit-focus"></div>
+                            <div class="field-item"><span class="field-label">BP Status</span><input type="text" class="field-input" id="edit-bpstatus"></div>
+                            <div class="field-item"><span class="field-label">Execution Model</span><input type="text" class="field-input" id="edit-execmodel"></div>
+                            <div class="field-item"><span class="field-label">Skill Category</span><input type="text" class="field-input" id="edit-skill"></div>
+                            <div class="field-item"><span class="field-label">RoadMap</span><input type="text" class="field-input" id="edit-roadmap"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-delivery">
+                    <div class="field-section">
+                        <h3>Delivery Team</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">NDI Department</span><input type="text" class="field-input" id="edit-ndi-dept"></div>
+                            <div class="field-item"><span class="field-label">NDI PM</span><input type="text" class="field-input" id="edit-ndi-pm"></div>
+                            <div class="field-item"><span class="field-label">Product Manager</span><input type="text" class="field-input" id="edit-ndi-prodmgr"></div>
+                            <div class="field-item"><span class="field-label">Architect</span><input type="text" class="field-input" id="edit-ndi-arch"></div>
+                            <div class="field-item"><span class="field-label">Team Size</span><input type="text" class="field-input" id="edit-teamsize"></div>
+                            <div class="field-item"><span class="field-label">Team Composition</span><input type="text" class="field-input" id="edit-teamcomp"></div>
+                            <div class="field-item"><span class="field-label">Length (Months)</span><input type="text" class="field-input" id="edit-length"></div>
+                            <div class="field-item"><span class="field-label">Stakeholders</span><input type="text" class="field-input" id="edit-stakeholders"></div>
+                            <div class="field-item"><span class="field-label">New/Established</span><input type="text" class="field-input" id="edit-newestablished"></div>
+                            <div class="field-item"><span class="field-label">User Base</span><input type="text" class="field-input" id="edit-userbase"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-risk">
+                    <div class="field-section">
+                        <h3>Risk & Escalation</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">RED/AMBER Reason</span><input type="text" class="field-input" id="edit-red-reason"></div>
+                            <div class="field-item"><span class="field-label">Mitigation Plan</span><input type="text" class="field-input" id="edit-red-mitigation"></div>
+                            <div class="field-item"><span class="field-label">Target Date</span><input type="text" class="field-input" id="edit-red-date"></div>
+                            <div class="field-item"><span class="field-label">Severity</span><input type="text" class="field-input" id="edit-severity"></div>
+                            <div class="field-item"><span class="field-label">Remarks</span><input type="text" class="field-input" id="edit-remarks" style="grid-column: 1 / -1;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-financials">
+                    <div class="field-section">
+                        <h3>Cost & Budget</h3>
+                        <div class="field-grid">
+                            <div class="field-item"><span class="field-label">Cost Category</span><input type="text" class="field-input" id="edit-cost-category"></div>
+                            <div class="field-item"><span class="field-label">Approved Cost (M-JPY)</span><input type="text" class="field-input" id="edit-cost-approved"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="footer-left">
+                    <button class="btn" onclick="closeModal()">Close</button>
+                </div>
+                <div class="footer-right">
+                    <button class="btn btn-primary" id="saveDraftBtn" onclick="saveChanges()">💾 Save Draft</button>
+                    <button class="btn btn-submit" id="submitBtn" onclick="submitForValidation()">📤 Submit for DPQM</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const allProjects = [
+            { id: 'PR08348', name: 'WHALE Variant Module enhancement', dept: 'Engineering', region: 'AP', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Green', cost: 'Amber', time: 'Green', type: 'Enhancement', priority: 'High', manager: 'KUCEWICZ, ANDY', eoc: 'Q4 FY26', ownership: 'KUCEWICZ, ANDY', delivery: 'On Track', methodology: 'Agile', newproduct: 'Enhancement', apa: 'Digital', impact: 'Yes', initiative: 'Project', focus: 'Digital Transformation', bpstatus: 'Confirmed', execmodel: 'In-house', skill: 'General', roadmap: 'Short Term', ndi_dept: 'Digital Delivery', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '8', teamcomp: 'Mixed', length: '12', stakeholders: 'Global', newestablished: 'Established', userbase: '500+', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'Low', remarks: 'On track', cost_category: 'CAPEX', cost_approved: '2.5' },
+            { id: 'LR08187', name: 'Informatica Retrospective procurement', dept: 'IS Governance', region: 'Global', company: 'AMIEO', status: 'Active', phase: 'Planning', overall: 'Green', quality: 'Green', cost: 'Green', time: 'Green', type: 'Compliance', priority: 'Medium', manager: 'CUNY, AUDREY', eoc: 'Q3 FY26', ownership: 'CUNY, AUDREY', delivery: 'On Track', methodology: 'Waterfall', newproduct: 'Enhancement', apa: 'Compliance', impact: 'No', initiative: 'Project', focus: 'Governance', bpstatus: 'Pipeline', execmodel: 'Outsourced', skill: 'Niche', roadmap: 'Long Term', ndi_dept: 'Quality', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '5', teamcomp: 'Internal', length: '8', stakeholders: 'Regional', newestablished: 'Established', userbase: '100+', red_reason: 'Vendor delays', red_mitigation: 'Escalate to procurement', red_date: '2026-07-15', severity: 'Medium', remarks: 'Awaiting vendor response', cost_category: 'OPEX', cost_approved: '1.2' },
+            { id: 'LR05701', name: 'G-SIS/VO-HUB AWS Migration - NE Support', dept: 'MFG', region: 'NE', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Amber', quality: 'Green', cost: 'Amber', time: 'Amber', type: 'Infrastructure', priority: 'High', manager: 'DAVIDSON, IAN (ISD)', eoc: 'Q2 FY26', ownership: 'DAVIDSON, IAN', delivery: 'At Risk', methodology: 'Hybrid', newproduct: 'Infrastructure', apa: 'Cloud', impact: 'Yes', initiative: 'Project', focus: 'Digital Transformation', bpstatus: 'Confirmed', execmodel: 'Hybrid', skill: 'Niche', roadmap: 'Short Term', ndi_dept: 'Infrastructure', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '12', teamcomp: 'Mixed', length: '10', stakeholders: 'Global', newestablished: 'New', userbase: '1000+', red_reason: 'Resource constraints', red_mitigation: 'Bring resources', red_date: '2026-06-30', severity: 'High', remarks: 'Timeline concern', cost_category: 'CAPEX', cost_approved: '5.8' },
+            { id: 'LR04915', name: 'Standardize NSCEE Warsaw HQ Infrastructure', dept: 'Digital Tech', region: 'EU', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Green', cost: 'Green', time: 'Amber', type: 'Infrastructure', priority: 'Medium', manager: 'TOMOR, GABOR', eoc: 'Q4 FY26', ownership: 'TOMOR, GABOR', delivery: 'On Track', methodology: 'Agile', newproduct: 'Infrastructure', apa: 'Operations', impact: 'No', initiative: 'Project', focus: 'Operational Excellence', bpstatus: 'Confirmed', execmodel: 'In-house', skill: 'General', roadmap: 'Long Term', ndi_dept: 'Infrastructure', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '6', teamcomp: 'Internal', length: '9', stakeholders: 'Regional', newestablished: 'Established', userbase: '250+', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'Low', remarks: 'Progressing well', cost_category: 'CAPEX', cost_approved: '3.1' },
+            { id: 'LR05031', name: 'Remote End User Productivity tool', dept: 'Digital Tech', region: 'Global', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Green', cost: 'Green', time: 'Green', type: 'Enablement', priority: 'High', manager: 'TOMOR, GABOR', eoc: 'Q3 FY26', ownership: 'TOMOR, GABOR', delivery: 'On Track', methodology: 'Agile', newproduct: 'New Product', apa: 'Productivity', impact: 'Yes', initiative: 'Product', focus: 'Digital Transformation', bpstatus: 'Opportunity', execmodel: 'In-house', skill: 'General', roadmap: 'Short Term', ndi_dept: 'Digital Delivery', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '10', teamcomp: 'Distributed', length: '7', stakeholders: 'Global', newestablished: 'New', userbase: '2000+', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'Low', remarks: 'High adoption', cost_category: 'CAPEX', cost_approved: '4.2' },
+            { id: 'LR00744', name: 'Vulnerability Scanning', dept: 'InfoSec', region: 'Global', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Green', cost: 'Green', time: 'Green', type: 'Security', priority: 'Critical', manager: 'TREMBATH, HEATHER', eoc: 'Q2 FY26', ownership: 'TREMBATH, HEATHER', delivery: 'On Track', methodology: 'Agile', newproduct: 'Enhancement', apa: 'Security', impact: 'Critical', initiative: 'Project', focus: 'Security', bpstatus: 'Confirmed', execmodel: 'In-house', skill: 'Niche', roadmap: 'Short Term', ndi_dept: 'Security', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '4', teamcomp: 'Specialized', length: '6', stakeholders: 'Global', newestablished: 'Established', userbase: 'Internal', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'Critical', remarks: 'Mandatory', cost_category: 'OPEX', cost_approved: '0.8' },
+            { id: 'LR00907', name: 'IdM Identity Mgmt upgrade', dept: 'InfoSec', region: 'Global', company: 'AMIEO', status: 'Active', phase: 'Planning', overall: 'Amber', quality: 'Amber', cost: 'Green', time: 'Amber', type: 'Compliance', priority: 'High', manager: 'TREMBATH, HEATHER', eoc: 'Q4 FY26', ownership: 'TREMBATH, HEATHER', delivery: 'At Risk', methodology: 'Waterfall', newproduct: 'Enhancement', apa: 'Identity', impact: 'Yes', initiative: 'Project', focus: 'Security', bpstatus: 'Pipeline', execmodel: 'Hybrid', skill: 'Niche', roadmap: 'Long Term', ndi_dept: 'Security', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '8', teamcomp: 'Mixed', length: '14', stakeholders: 'Global', newestablished: 'Established', userbase: 'All', red_reason: 'Vendor pending', red_mitigation: 'Fast-track RFP', red_date: '2026-09-01', severity: 'High', remarks: 'Critical compliance', cost_category: 'CAPEX', cost_approved: '6.5' },
+            { id: 'LR00084', name: 'TARA_FY20', dept: 'M&S', region: 'JP', company: 'AMIEO', status: 'Active', phase: 'Closure', overall: 'Green', quality: 'Green', cost: 'Green', time: 'Green', type: 'Maintenance', priority: 'Low', manager: 'LANOUGUERE, BAPTISTE', eoc: 'Q1 FY26', ownership: 'LANOUGUERE, BAPTISTE', delivery: 'Closed', methodology: 'Kanban', newproduct: 'Maintenance', apa: 'Operations', impact: 'No', initiative: 'Project', focus: 'Operational Excellence', bpstatus: 'Closed', execmodel: 'In-house', skill: 'General', roadmap: 'N/A', ndi_dept: 'Operations', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '3', teamcomp: 'Internal', length: '5', stakeholders: 'Regional', newestablished: 'Established', userbase: '50+', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'None', remarks: 'Closed successfully', cost_category: 'OPEX', cost_approved: '0.5' },
+            { id: 'LR00708', name: 'Apigee Enhancement', dept: 'Digital Tech', region: 'Global', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Green', cost: 'Amber', time: 'Green', type: 'Enhancement', priority: 'Medium', manager: 'BARDET, JONATHAN', eoc: 'Q3 FY26', ownership: 'BARDET, JONATHAN', delivery: 'On Track', methodology: 'Agile', newproduct: 'Enhancement', apa: 'API', impact: 'Yes', initiative: 'Product', focus: 'Digital Transformation', bpstatus: 'Confirmed', execmodel: 'In-house', skill: 'General', roadmap: 'Short Term', ndi_dept: 'Digital Delivery', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '7', teamcomp: 'Internal', length: '8', stakeholders: 'Global', newestablished: 'Established', userbase: '300+', red_reason: 'None', red_mitigation: 'N/A', red_date: 'N/A', severity: 'Low', remarks: 'On track', cost_category: 'CAPEX', cost_approved: '2.1' },
+            { id: 'PR08268', name: 'NE: Calibration Database', dept: 'MFG', region: 'NE', company: 'AMIEO', status: 'Active', phase: 'Execution', overall: 'Green', quality: 'Amber', cost: 'Green', time: 'Green', type: 'Infrastructure', priority: 'Medium', manager: 'LINTON, MARK', eoc: 'Q4 FY26', ownership: 'LINTON, MARK', delivery: 'On Track', methodology: 'Agile', newproduct: 'Infrastructure', apa: 'Manufacturing', impact: 'No', initiative: 'Project', focus: 'Operational Excellence', bpstatus: 'Confirmed', execmodel: 'In-house', skill: 'Niche', roadmap: 'Long Term', ndi_dept: 'Manufacturing', ndi_pm: 'TBD', ndi_prodmgr: 'TBD', ndi_arch: 'TBD', teamsize: '5', teamcomp: 'Specialized', length: '11', stakeholders: 'Regional', newestablished: 'Established', userbase: '200+', red_reason: 'Data quality', red_mitigation: 'Validation rules', red_date: '2026-08-15', severity: 'Medium', remarks: 'Cleanup ongoing', cost_category: 'CAPEX', cost_approved: '1.8' }
+        ];
+        
+        let filteredProjects = [...allProjects];
+        let currentPage = 1;
+        const projectsPerPage = 10;
+        let selectedProject = null;
+        let globalLocked = false;
+        
+        function getRagBadge(value) {
+            const badges = { 'Green': 'rag-green', 'Amber': 'rag-amber', 'Red': 'rag-red' };
+            return `<span class="badge ${badges[value] || 'rag-green'}">${value.charAt(0)}</span>`;
+        }
+        
+        function showPage(page) {
+            document.getElementById('homePage').style.display = page === 'home' ? 'block' : 'none';
+            document.getElementById('listPage').style.display = page === 'list' ? 'block' : 'none';
+            document.getElementById('searchSection').style.display = page === 'list' ? 'flex' : 'none';
+            document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (page === 'home') renderDashboard();
+            if (page === 'list') renderTable();
+        }
+        
+        function goHome() {
+            document.querySelectorAll('.nav-tabs button')[1].click();
+        }
+        
+        function renderDashboard() {
+            const cards = document.getElementById('dashboardCards');
+            cards.innerHTML = allProjects.slice(0, 6).map(p => `
+                <div class="card">
+                    <h3>${p.name}</h3>
+                    <p>${p.dept} • ${p.region}</p>
+                    <p style="margin: 8px 0;"><span class="badge ${p.overall === 'Green' ? 'rag-green' : p.overall === 'Amber' ? 'rag-amber' : 'rag-red'}">${p.overall}</span></p>
+                    <span class="id-link" onclick="openViewModal('${p.id}')">View ${p.id} →</span>
+                </div>
+            `).join('');
+        }
+        
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const start = (currentPage - 1) * projectsPerPage;
+            const end = start + projectsPerPage;
+            const pageProjects = filteredProjects.slice(start, end);
+            
+            tbody.innerHTML = pageProjects.map(p => `
+                <tr>
+                    <td class="col-id" onclick="openViewModal('${p.id}')">${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.dept}</td>
+                    <td>${p.region}</td>
+                    <td>${p.company}</td>
+                    <td><span class="badge status-active">${p.status}</span></td>
+                    <td>${p.phase}</td>
+                    <td class="col-rag">${getRagBadge(p.overall)}</td>
+                    <td class="col-rag">${getRagBadge(p.quality)}</td>
+                    <td class="col-rag">${getRagBadge(p.cost)}</td>
+                    <td class="col-rag">${getRagBadge(p.time)}</td>
+                    <td>${p.type}</td>
+                    <td>${p.priority}</td>
+                    <td class="col-action"><button class="btn-edit" onclick="openModal('${p.id}')">Edit</button></td>
+                </tr>
+            `).join('');
+            
+            renderPagination();
+        }
+        
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.className = i === currentPage ? 'active' : '';
+                btn.onclick = () => { currentPage = i; renderTable(); };
+                pagination.appendChild(btn);
+            }
+        }
+        
+        function openViewModal(id) {
+            selectedProject = allProjects.find(p => p.id === id);
+            document.getElementById('viewModalTitle').textContent = `${selectedProject.id} • ${selectedProject.name}`;
+            
+            const content = `
+                <div class="field-section">
+                    <h3>Project Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div><span class="field-label">Project ID</span><p class="field-value">${selectedProject.id}</p></div>
+                        <div><span class="field-label">Project Name</span><p class="field-value">${selectedProject.name}</p></div>
+                        <div><span class="field-label">Department</span><p class="field-value">${selectedProject.dept}</p></div>
+                        <div><span class="field-label">Region</span><p class="field-value">${selectedProject.region}</p></div>
+                        <div><span class="field-label">Company</span><p class="field-value">${selectedProject.company}</p></div>
+                        <div><span class="field-label">Status</span><p class="field-value"><span class="badge status-active">${selectedProject.status}</span></p></div>
+                        <div><span class="field-label">Phase</span><p class="field-value">${selectedProject.phase}</p></div>
+                        <div><span class="field-label">Priority</span><p class="field-value">${selectedProject.priority}</p></div>
+                        <div><span class="field-label">Type</span><p class="field-value">${selectedProject.type}</p></div>
+                        <div><span class="field-label">Manager</span><p class="field-value">${selectedProject.manager}</p></div>
+                    </div>
+                </div>
+                <div class="field-section">
+                    <h3>KPIs</h3>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                        <div><span class="field-label">Overall</span><p class="field-value" style="font-size: 16px; font-weight: 700;">${selectedProject.overall}</p></div>
+                        <div><span class="field-label">Quality</span><p class="field-value" style="font-size: 16px; font-weight: 700;">${selectedProject.quality}</p></div>
+                        <div><span class="field-label">Cost</span><p class="field-value" style="font-size: 16px; font-weight: 700;">${selectedProject.cost}</p></div>
+                        <div><span class="field-label">Time</span><p class="field-value" style="font-size: 16px; font-weight: 700;">${selectedProject.time}</p></div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('viewModalContent').innerHTML = content;
+            document.getElementById('viewModal').classList.add('active');
+        }
+        
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.remove('active');
+        }
+        
+        function toggleGlobalLock() {
+            globalLocked = !globalLocked;
+            const btn = document.getElementById('globalLock');
+            btn.textContent = globalLocked ? '🔒 Lock Data Entry' : '🔓 Unlock Data Entry';
+            btn.classList.toggle('locked');
+        }
+        
+        function openModal(id) {
+            selectedProject = allProjects.find(p => p.id === id);
+            document.getElementById('modalTitle').textContent = selectedProject.name;
+            document.getElementById('modal-id').textContent = selectedProject.id;
+            
+            document.getElementById('edit-id').textContent = selectedProject.id;
+            Object.keys(selectedProject).forEach(key => {
+                const elem = document.getElementById(`edit-${key}`);
+                if (elem) elem.value = selectedProject[key] || '';
+            });
+            
+            const lockStatus = document.getElementById('modalLockStatus');
+            if (globalLocked) {
+                lockStatus.textContent = '🔒 Locked';
+                lockStatus.classList.add('locked');
+                document.querySelectorAll('.field-input').forEach(f => f.disabled = true);
+            } else {
+                lockStatus.textContent = '🔓 Unlocked';
+                lockStatus.classList.remove('locked');
+                document.querySelectorAll('.field-input').forEach(f => f.disabled = false);
+            }
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        
+        function saveChanges() {
+            if (!selectedProject || globalLocked) { alert('Unlock data entry first'); return; }
+            alert('✓ Draft saved successfully');
+            closeModal();
+        }
+        
+        function submitForValidation() {
+            if (!selectedProject) return;
+            alert(`✓ Submitted for DPQM review\n\nNotifications sent to:\nLead_DPQM@nissan.com\nManager_DPQM@nissan.com\nReviewer_QM@nissan.com`);
+            closeModal();
+        }
+        
+        document.getElementById('globalSearch').addEventListener('keyup', (e) => {
+            const search = e.target.value.toLowerCase();
+            filteredProjects = allProjects.filter(p => 
+                p.id.toLowerCase().includes(search) ||
+                p.name.toLowerCase().includes(search) ||
+                p.manager.toLowerCase().includes(search)
+            );
+            currentPage = 1;
+            renderTable();
+        });
+        
+        document.querySelectorAll('.modal-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            });
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeViewModal();
+            }
+        });
+        
+        renderTable();
+    </script>
+</body>
+</html>
