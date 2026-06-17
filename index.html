@@ -511,5 +511,78 @@
         
         renderTable();
     </script>
+    <script>
+(function() {
+  if (sessionStorage.getItem('ndi_auth') === 'true') return;
+
+  var style = document.createElement('style');
+  style.textContent = `
+    #ndi-pw-overlay { position:fixed; top:0; left:0; width:100%; height:100%;
+      background:linear-gradient(135deg,#1a237e 0%,#283593 50%,#1565c0 100%);
+      z-index:99999; display:flex; align-items:center; justify-content:center;
+      font-family:'Segoe UI',Arial,sans-serif; }
+    #ndi-pw-box { background:#fff; border-radius:16px; padding:48px 40px 40px;
+      width:100%; max-width:420px; box-shadow:0 24px 64px rgba(0,0,0,.4);
+      text-align:center; }
+    #ndi-pw-input { width:100%; padding:13px 46px 13px 16px; border:2px solid #e0e0e0;
+      border-radius:10px; font-size:16px; outline:none; box-sizing:border-box; letter-spacing:2px; }
+    #ndi-pw-input:focus { border-color:#1565c0; }
+    #ndi-pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; font-size:18px; }
+    #ndi-pw-btn { width:100%; padding:14px; background:linear-gradient(90deg,#1565c0,#1a237e);
+      color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+    #ndi-pw-error { font-size:12px; color:#e53935; text-align:left; min-height:16px; display:none; }
+    @keyframes ndi-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+      40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+  `;
+  document.head.appendChild(style);
+
+  var o = document.createElement('div');
+  o.id = 'ndi-pw-overlay';
+  o.innerHTML = '<div id="ndi-pw-box">'
+    + '<div style="font-size:36px">📊</div>'
+    + '<h2 style="color:#1a237e;margin:8px 0 4px">NDI Project Portal</h2>'
+    + '<p style="color:#78909c;font-size:13px;margin:0 0 28px">Enter your access password to continue</p>'
+    + '<label style="display:block;text-align:left;font-size:11px;font-weight:700;color:#455a64;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Password</label>'
+    + '<div style="position:relative;margin-bottom:10px">'
+    + '<input id="ndi-pw-input" type="password" placeholder="Enter password..." />'
+    + '<button id="ndi-pw-toggle" type="button">👁</button></div>'
+    + '<div id="ndi-pw-error">❌ Incorrect password. Please try again.</div>'
+    + '<button id="ndi-pw-btn">🔓 Unlock Portal</button>'
+    + '<p style="font-size:11px;color:#b0bec5;margin-top:20px">Protected by NDI Security Module © 2026</p>'
+    + '</div>';
+  document.body.appendChild(o);
+  document.body.style.overflow = 'hidden';
+
+  var inp = document.getElementById('ndi-pw-input'),
+      btn = document.getElementById('ndi-pw-btn'),
+      err = document.getElementById('ndi-pw-error'),
+      tog = document.getElementById('ndi-pw-toggle'),
+      box = document.getElementById('ndi-pw-box');
+
+  setTimeout(function(){ inp.focus(); }, 100);
+  tog.addEventListener('click', function(){
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    tog.textContent = inp.type === 'password' ? '👁' : '🙈';
+  });
+
+  function unlock() {
+    if (inp.value === 'ndi2026') {
+      o.style.transition = 'opacity .4s'; o.style.opacity = '0';
+      document.body.style.overflow = '';
+      setTimeout(function(){ o.remove(); sessionStorage.setItem('ndi_auth','true'); }, 400);
+    } else {
+      err.style.display = 'block';
+      inp.value = ''; inp.style.borderColor = '#e53935';
+      box.style.animation = 'none'; void box.offsetWidth;
+      box.style.animation = 'ndi-shake .35s ease';
+      setTimeout(function(){ inp.style.borderColor = '#e0e0e0'; inp.focus(); }, 500);
+    }
+  }
+  btn.addEventListener('click', unlock);
+  inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') unlock(); });
+  inp.addEventListener('input', function(){ err.style.display='none'; inp.style.borderColor='#e0e0e0'; });
+})();
+</script>
 </body>
 </html>
